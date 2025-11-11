@@ -1,0 +1,11 @@
+requests
+python-dotenv
+newspaper3k
+openai
+transformers
+torch
+sentencepiece
+gTTS
+tqdm
+apscheduler
+python-telegram-bot
