@@ -9,3 +9,6 @@ gTTS
 tqdm
 apscheduler
 python-telegram-bot
+langchain
+tiktoken
+faiss-cpu
