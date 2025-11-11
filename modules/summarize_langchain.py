@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple
 from newspaper import Article
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
 
