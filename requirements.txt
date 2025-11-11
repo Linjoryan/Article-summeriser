@@ -14,3 +14,4 @@ langchain
 tiktoken
 faiss-cpu
 lxml[html_clean]
+langchain-text-splitters
