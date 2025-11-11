@@ -1,5 +1,5 @@
 from modules.fetch_news import fetch_articles
-from modules.summarize import summarize_articles
+from modules.summarize_langchain import summarize_articles_langchain
 from modules.text_to_speech import articles_to_audio
 from modules.utils import save_script_and_links
 from modules.send_telegram import send_daily_brief
@@ -11,7 +11,7 @@ def main_for_user(chat_id: int, topic: str, prefer_openai: bool = True):
     if not articles:
         print('No fresh articles for', topic)
         return
-    summaries, script = summarize_articles(articles, target_minutes=15, prefer_openai=prefer_openai)
+    summaries, script = summarize_articles_langchain(articles, target_minutes=10)
     script_path, links_path = save_script_and_links(summaries, script, topic)
     audio_path = articles_to_audio(script)
     send_daily_brief(chat_id, audio_path, links_path)
