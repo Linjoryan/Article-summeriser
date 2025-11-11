@@ -13,3 +13,4 @@ python-telegram-bot
 langchain
 tiktoken
 faiss-cpu
+lxml[html_clean]
