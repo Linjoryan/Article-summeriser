@@ -1,50 +1,54 @@
-from typing import List, Dict, Tuple
-from newspaper import Article
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chat_models import ChatOpenAI
-from langchain.chains.summarize import load_summarize_chain
+import os, json
+from datetime import datetime
+from pathlib import Path
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-def extract_full_text(url: str) -> str:
-    try:
-        art = Article(url)
-        art.download()
-        art.parse()
-        return art.text or ''
-    except Exception:
-        return ''
+from config.settings import TELEGRAM_BOT_TOKEN, USERS_DB
 
-def summarize_articles_langchain(articles: List[Dict], target_minutes: int = 10) -> Tuple[List[Dict], str]:
-    """Summarize articles using LangChain map-reduce summarization. target_minutes controls
-    the approximate target spoken length (used to tune chunking/LLM params).
+USERS_DB = Path('data') / 'users.json'
 
-    Returns list of summaries and the combined script."""
-    # approximate target words and per-article target
-    words_target = target_minutes * 140
-    per_article_words = max(80, words_target // max(1, len(articles)))
+def _load_users():
+    if not USERS_DB.exists():
+        return {'users': []}
+    with open(USERS_DB, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-    llm = ChatOpenAI(model_name='gpt-4o-mini', temperature=0.2, max_tokens=1500)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
-    chain = load_summarize_chain(llm, chain_type='map_reduce')
+def _save_users(data):
+    with open(USERS_DB, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
 
-    summaries = []
-    for art in articles:
-        title = art.get('title') or art.get('description') or 'Untitled'
-        url = art.get('url')
-        text = extract_full_text(url)
-        if not text:
-            summaries.append({'title': title, 'url': url, 'summary': '[Could not extract article text]'})
-            continue
-        docs = text_splitter.create_documents([text])
-        # run chain to produce a summary
-        try:
-            summary = chain.run(docs)
-        except Exception as e:
-            summary = '[Summarization failed]'
-        summaries.append({'title': title, 'url': url, 'summary': summary})
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "👋 Welcome to Daily Brief AI!\n\nPlease reply with your preferred topics (comma-separated, e.g. 'AI, health, business')."
+    )
+    context.user_data['awaiting_topics'] = True
 
-    # build script
-    intro = 'Good morning — here are the top stories for today.'
-    segments = [f"Story {i}: {s['title']}. {s['summary']}" for i, s in enumerate(summaries, start=1)]
-    outro = "That's all for today's brief. To read the full articles, see the links provided. Have a great day."
-    script = '\n\n'.join([intro] + segments + [outro])
-    return summaries, script
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get('awaiting_topics'):
+        topics = [t.strip() for t in update.message.text.split(',') if t.strip()]
+        user_id = update.message.chat_id
+        data = _load_users()
+        # check existing
+        for u in data['users']:
+            if u.get('chat_id') == user_id:
+                u['topics'] = topics
+                u['registered_on'] = datetime.utcnow().isoformat()
+                _save_users(data)
+                await update.message.reply_text(f"✅ Preferences updated! You will receive briefs for: {', '.join(topics)}")
+                context.user_data['awaiting_topics'] = False
+                return
+        # new user
+        data['users'].append({'chat_id': user_id, 'topics': topics, 'registered_on': datetime.utcnow().isoformat()})
+        _save_users(data)
+        await update.message.reply_text(f"✅ Registered! You'll get daily briefs about: {', '.join(topics)}")
+        context.user_data['awaiting_topics'] = False
+    else:
+        await update.message.reply_text("Type /start to register or update your preferences.")
+
+def run_bot_in_thread():
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app.add_handler(CommandHandler('start', start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    # run polling (blocking) - caller should run in a thread if they want the scheduler in same process
+    app.run_polling()
