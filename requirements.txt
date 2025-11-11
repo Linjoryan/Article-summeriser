@@ -15,3 +15,7 @@ tiktoken
 faiss-cpu
 lxml[html_clean]
 langchain-text-splitters
+langchain
+langchain-community
+langchain-openai
+langchain-core
