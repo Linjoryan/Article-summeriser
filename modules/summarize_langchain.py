@@ -2,8 +2,9 @@ from typing import List, Dict, Tuple
 from newspaper import Article
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
-from langchain.chains import create_summarization_chain
 from langchain_core.prompts import PromptTemplate
+from langchain.chains import MapReduceDocumentsChain, LLMChain
+from langchain.text_splitter import CharacterTextSplitter
 
 def extract_full_text(url: str) -> str:
     try:
