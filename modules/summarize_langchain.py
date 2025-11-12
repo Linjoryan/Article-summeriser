@@ -1,10 +1,10 @@
 from typing import List, Dict, Tuple
 from newspaper import Article
-from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-#from langchain_core.chains import MapReduceDocumentsChain, LLMChain
-from langchain.chains import MapReduceDocumentsChain, LLMChain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.documents import Document
 
 def extract_full_text(url: str) -> str:
     try:
