@@ -9,7 +9,7 @@ sentencepiece
 gTTS
 tqdm
 apscheduler
-python-telegram-bot
+python-telegram-bot>=20.0
 langchain
 tiktoken
 faiss-cpu
@@ -18,3 +18,5 @@ langchain-text-splitters
 langchain-community
 langchain-core
 langchain-openai
+pydub
+tiktoken
